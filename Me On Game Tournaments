@@ -5,84 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Me On Game Tournaments</title>
 <style>
-  /* Body & Gaming Background */
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    color: #fff;
-    position: relative;
-    overflow-x: hidden;
-  }
-
-  /* Watermark */
-  body::after {
-    content: "EDRINE CHAOS";
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    font-size: 100px;
-    color: rgba(255,255,255,0.05);
-    transform: translate(-50%, -50%) rotate(-30deg);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .container {
-    max-width: 900px;
-    margin: auto;
-    position: relative;
-    z-index: 1;
-  }
-
-  h1, h2 {
-    text-align: center;
-    color: #00ffea;
-    text-shadow: 2px 2px #000;
-  }
-
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 20px 0;
-    background: rgba(0,0,0,0.7);
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-  }
-
-  th, td {
-    border: 1px solid #00ffea;
-    padding: 8px;
-    text-align: center;
-  }
-
-  th {
-    background: #0ff;
-    color: #000;
-  }
-
-  input[type="number"] {
-    width: 50px;
-    background: #111;
-    color: #0ff;
-    border: 1px solid #0ff;
-    text-align: center;
-  }
-
-  button {
-    padding: 5px 10px;
-    cursor: pointer;
-    background: #00ffea;
-    color: #000;
-    border: none;
-    border-radius: 5px;
-    font-weight: bold;
-  }
-
-  button:hover {
-    background: #0ff;
-    color: #000;
-  }
+  body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+  h1, h2 { text-align: center; color: #333; }
+  table { border-collapse: collapse; width: 100%; margin: 20px 0; background: #fff; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  th { background: #4CAF50; color: white; }
+  input[type="number"] { width: 50px; }
+  button { padding: 5px 10px; cursor: pointer; }
+  .container { max-width: 900px; margin: auto; }
 </style>
 </head>
 <body>
@@ -117,7 +47,6 @@
 </div>
 
 <script>
-// Teams
 const teams = ["Edrine", "Elvis", "J Collins", "Cyber Robert", "Adamz"];
 
 // Round-Robin Fixtures
@@ -134,7 +63,7 @@ const fixtures = [
   {round:5, t1:"Elvis", t2:"J Collins", bye:null, s1:null, s2:null},
 ];
 
-// League Table
+// Initialize League Table
 let league = {};
 teams.forEach(team => {
   league[team] = {P:0, W:0, D:0, L:0, GF:0, GA:0, GD:0, PTS:0};
@@ -159,21 +88,27 @@ function renderFixtures() {
   });
 }
 
-// Update Match
+// Update Match Result and League Table
 function updateMatch(index) {
   const s1 = parseInt(document.getElementById(`s1-${index}`).value);
   const s2 = parseInt(document.getElementById(`s2-${index}`).value);
   if (isNaN(s1) || isNaN(s2)) { alert("Enter both scores!"); return; }
 
   const match = fixtures[index];
-  if (match.s1 !== null && match.s2 !== null) removePreviousStats(match.t1, match.t2, match.s1, match.s2);
+
+  // Remove previous stats if any
+  if (match.s1 !== null && match.s2 !== null) {
+    removePreviousStats(match.t1, match.t2, match.s1, match.s2);
+  }
+
   match.s1 = s1;
   match.s2 = s2;
+
   addStats(match.t1, match.t2, s1, s2);
   renderLeagueTable();
 }
 
-// Remove previous stats
+// Remove previous match stats
 function removePreviousStats(t1, t2, s1, s2){
   league[t1].P--; league[t2].P--;
   league[t1].GF -= s1; league[t1].GA -= s2;
@@ -190,27 +125,37 @@ function removePreviousStats(t1, t2, s1, s2){
   league[t2].L -= s2 < s1 ? 1 : 0;
 }
 
-// Add stats
+// Add stats for a match
 function addStats(t1, t2, s1, s2){
   league[t1].P++; league[t2].P++;
   league[t1].GF += s1; league[t1].GA += s2;
   league[t2].GF += s2; league[t2].GA += s1;
   league[t1].GD = league[t1].GF - league[t1].GA;
   league[t2].GD = league[t2].GF - league[t2].GA;
-  if(s1>s2){ league[t1].W++; league[t2].L++; league[t1].PTS+=3; }
-  else if(s1<s2){ league[t2].W++; league[t1].L++; league[t2].PTS+=3; }
-  else{ league[t1].D++; league[t2].D++; league[t1].PTS++; league[t2].PTS++; }
+
+  if(s1>s2){
+    league[t1].W++; league[t2].L++;
+    league[t1].PTS += 3;
+  } else if(s1<s2){
+    league[t2].W++; league[t1].L++;
+    league[t2].PTS += 3;
+  } else{
+    league[t1].D++; league[t2].D++;
+    league[t1].PTS +=1; league[t2].PTS +=1;
+  }
 }
 
 // Render League Table
 function renderLeagueTable(){
   const tbody = document.querySelector("#leagueTable tbody");
   tbody.innerHTML = "";
+  // Sort by PTS → GD → GF
   const sorted = Object.keys(league).sort((a,b)=>{
     if(league[b].PTS !== league[a].PTS) return league[b].PTS - league[a].PTS;
     if(league[b].GD !== league[a].GD) return league[b].GD - league[a].GD;
     return league[b].GF - league[a].GF;
   });
+
   sorted.forEach(team=>{
     const data = league[team];
     const row = document.createElement("tr");
@@ -229,7 +174,7 @@ function renderLeagueTable(){
   });
 }
 
-// Initial Render
+// Initial render
 renderFixtures();
 renderLeagueTable();
 </script>
